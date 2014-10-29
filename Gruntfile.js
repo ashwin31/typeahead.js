@@ -6,6 +6,7 @@ var semver = require('semver'),
       ],
       bloodhound: [
       'src/bloodhound/version.js',
+      'src/bloodhound/tokenizers.js',
       'src/bloodhound/lru_cache.js',
       'src/bloodhound/persistent_storage.js',
       'src/bloodhound/transport.js',
@@ -37,7 +38,7 @@ module.exports = function(grunt) {
       '/*!',
       ' * typeahead.js <%= version %>',
       ' * https://github.com/twitter/typeahead.js',
-      ' * Copyright 2013 Twitter, Inc. and other contributors; Licensed MIT',
+      ' * Copyright 2013-<%= grunt.template.today("yyyy") %> Twitter, Inc. and other contributors; Licensed MIT',
       ' */\n\n'
     ].join('\n'),
 
@@ -55,6 +56,14 @@ module.exports = function(grunt) {
         src: files.common.concat(files.bloodhound),
         dest: '<%= buildDir %>/bloodhound.js'
       },
+      bloodhoundMin: {
+        options: {
+          mangle: true,
+          compress: true
+        },
+        src: files.common.concat(files.bloodhound),
+        dest: '<%= buildDir %>/bloodhound.min.js'
+      },
       typeahead: {
         options: {
           mangle: false,
@@ -63,6 +72,15 @@ module.exports = function(grunt) {
         },
         src: files.common.concat(files.typeahead),
         dest: '<%= buildDir %>/typeahead.jquery.js'
+
+      },
+      typeaheadMin: {
+        options: {
+          mangle: true,
+          compress: true
+        },
+        src: files.common.concat(files.typeahead),
+        dest: '<%= buildDir %>/typeahead.jquery.min.js'
 
       },
       bundle: {
@@ -99,7 +117,7 @@ module.exports = function(grunt) {
         jshintrc: '.jshintrc'
       },
       src: 'src/**/*.js',
-      test: ['test/*_spec.js'],
+      test: ['test/*_spec.js', 'test/integration/test.js'],
       gruntfile: ['Gruntfile.js']
     },
 
@@ -111,41 +129,32 @@ module.exports = function(grunt) {
     },
 
     exec: {
-      git_is_clean: {
-        cmd: 'test -z "$(git status --porcelain)"'
-      },
-      git_on_master: {
-        cmd: 'test $(git symbolic-ref --short -q HEAD) = master'
-      },
-      git_add: {
-        cmd: 'git add .'
-      },
+      npm_publish: 'npm publish',
+      git_is_clean: 'test -z "$(git status --porcelain)"',
+      git_on_master: 'test $(git symbolic-ref --short -q HEAD) = master',
+      git_add: 'git add .',
+      git_push: 'git push && git push --tags',
       git_commit: {
         cmd: function(m) { return f('git commit -m "%s"', m); }
       },
       git_tag: {
         cmd: function(v) { return f('git tag v%s -am "%s"', v, v); }
       },
-      git_push: {
-        cmd: 'git push && git push --tags'
-      },
-      publish_assets: {
-        cmd: [
-          'cp -r <%= buildDir %> typeahead.js',
-          'zip -r typeahead.js/typeahead.js.zip typeahead.js',
-          'git checkout gh-pages',
-          'rm -rf releases/latest',
-          'cp -r typeahead.js releases/<%= version %>',
-          'cp -r typeahead.js releases/latest',
-          'git add releases/<%= version %> releases/latest',
-          'sed -E -i "" \'s/v[0-9]+\\.[0-9]+\\.[0-9]+/v<%= version %>/\' index.html',
-          'git add index.html',
-          'git commit -m "Add assets for <%= version %>."',
-          //'git push',
-          'git checkout -',
-          'rm -rf typeahead.js'
-        ].join(' && ')
-      }
+      publish_assets: [
+        'cp -r <%= buildDir %> typeahead.js',
+        'zip -r typeahead.js/typeahead.js.zip typeahead.js',
+        'git checkout gh-pages',
+        'rm -rf releases/latest',
+        'cp -r typeahead.js releases/<%= version %>',
+        'cp -r typeahead.js releases/latest',
+        'git add releases/<%= version %> releases/latest',
+        'sed -E -i "" \'s/v[0-9]+\\.[0-9]+\\.[0-9]+/v<%= version %>/\' index.html',
+        'git add index.html',
+        'git commit -m "Add assets for <%= version %>."',
+        'git push',
+        'git checkout -',
+        'rm -rf typeahead.js'
+      ].join(' && ')
     },
 
     clean: {
@@ -154,27 +163,29 @@ module.exports = function(grunt) {
 
     connect: {
       server: {
-        options: {
-          port: 8888, keepalive: true
-        }
+        options: { port: 8888, keepalive: true }
       }
     },
 
-    parallel: {
-      dev: [
-        { grunt: true, args: ['server'] },
-        { grunt: true, args: ['watch'] }
-      ]
+    concurrent: {
+      options: { logConcurrentOutput: true },
+      dev: ['server', 'watch']
+    },
+
+    step: {
+      options: {
+        option: false
+      }
     }
   });
 
-  grunt.registerTask('release', 'Ship it.', function(version) {
+  grunt.registerTask('release', '#shipit', function(version) {
     var curVersion = grunt.config.get('version');
 
     version = semver.inc(curVersion, version) || version;
 
     if (!semver.valid(version) || semver.lte(version, curVersion)) {
-      grunt.fatal('invalid version dummy');
+      grunt.fatal('hey dummy, that version is no good!');
     }
 
     grunt.config.set('version', version);
@@ -182,12 +193,17 @@ module.exports = function(grunt) {
     grunt.task.run([
       'exec:git_on_master',
       'exec:git_is_clean',
-      'manifests:' + version,
+      f('step:Update to version %s?', version),
+      f('manifests:%s', version),
       'build',
       'exec:git_add',
-      'exec:git_commit:' + version,
-      'exec:git_tag:' + version,
-      //'exec:git_push',
+      f('exec:git_commit:%s', version),
+      f('exec:git_tag:%s', version),
+      'step:Push changes?',
+      'exec:git_push',
+      'step:Publish to npm?',
+      'exec:npm_publish',
+      'step:Publish assets?',
       'exec:publish_assets'
     ]);
   });
@@ -231,14 +247,15 @@ module.exports = function(grunt) {
   grunt.registerTask('build', ['uglify', 'sed:version']);
   grunt.registerTask('server', 'connect:server');
   grunt.registerTask('lint', 'jshint');
-  grunt.registerTask('dev', 'parallel:dev');
+  grunt.registerTask('dev', 'concurrent:dev');
 
   // load tasks
   // ----------
 
   grunt.loadNpmTasks('grunt-sed');
   grunt.loadNpmTasks('grunt-exec');
-  grunt.loadNpmTasks('grunt-parallel');
+  grunt.loadNpmTasks('grunt-step');
+  grunt.loadNpmTasks('grunt-concurrent');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-uglify');

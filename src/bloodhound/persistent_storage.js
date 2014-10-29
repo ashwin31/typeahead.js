@@ -1,10 +1,12 @@
 /*
  * typeahead.js
  * https://github.com/twitter/typeahead.js
- * Copyright 2013 Twitter, Inc. and other contributors; Licensed MIT
+ * Copyright 2013-2014 Twitter, Inc. and other contributors; Licensed MIT
  */
 
 var PersistentStorage = (function() {
+  'use strict';
+
   var ls, methods;
 
   try {
@@ -24,7 +26,7 @@ var PersistentStorage = (function() {
   function PersistentStorage(namespace) {
     this.prefix = ['__', namespace, '__'].join('');
     this.ttlKey = '__ttl__';
-    this.keyMatcher = new RegExp('^' + this.prefix);
+    this.keyMatcher = new RegExp('^' + _.escapeRegExChars(this.prefix));
   }
 
   // instance methods

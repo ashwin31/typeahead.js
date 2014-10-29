@@ -1,10 +1,11 @@
 /*
  * typeahead.js
  * https://github.com/twitter/typeahead.js
- * Copyright 2013 Twitter, Inc. and other contributors; Licensed MIT
+ * Copyright 2013-2014 Twitter, Inc. and other contributors; Licensed MIT
  */
 
 var oParser = (function() {
+  'use strict';
 
   return {
     local: getLocal,
@@ -13,13 +14,7 @@ var oParser = (function() {
   };
 
   function getLocal(o) {
-    var local =  o.local || null;
-
-    if (_.isFunction(local)) {
-        local = local.call(null);
-    }
-
-    return local;
+    return o.local || null;
   }
 
   function getPrefetch(o) {
@@ -54,6 +49,7 @@ var oParser = (function() {
 
     defaults = {
       url: null,
+      cache: true,
       wildcard: '%QUERY',
       replace: null,
       rateLimitBy: 'debounce',

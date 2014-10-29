@@ -41,14 +41,14 @@ var engine = new Bloodhound({
   name: 'animals',
   local: [{ val: 'dog' }, { val: 'pig' }, { val: 'moose' }],
   remote: 'http://example.com/animals?q=%QUERY',
-  datumTokenizer: function(d) { 
-      return Bloodhound.tokenizers.whitespace(d.val); 
+  datumTokenizer: function(d) {
+    return Bloodhound.tokenizers.whitespace(d.val);
   },
   queryTokenizer: Bloodhound.tokenizers.whitespace
 });
 ```
 
-#### Bloodhound#initialize()
+#### Bloodhound#initialize(reinitialize)
 
 Kicks off the initialization of the suggestion engine. This includes processing 
 the data provided through `local` and fetching/processing the data provided 
@@ -62,6 +62,70 @@ promise
 .done(function() { console.log('success!'); })
 .fail(function() { console.log('err!'); });
 ```
+
+After the initial call of `initialize`, how subsequent invocations of the method
+behave depends on the `reinitialize` argument. If `reinitialize` is falsy, the
+method will not execute the initialization logic and will just return the same 
+jQuery promise returned by the initial invocation. If `reinitialize` is truthy,
+the method will behave as if it were being called for the first time.
+
+```javascript
+var promise1 = engine.initialize();
+var promise2 = engine.initialize();
+var promise3 = engine.initialize(true);
+
+promise1 === promise2;
+promise3 !== promise1 && promise3 !== promise2;
+```
+
+#### Bloodhound#add(datums)
+
+Takes one argument, `datums`, which is expected to be an array of 
+[datums](#datums). The passed in datums will get added to the search index that
+powers the suggestion engine.
+
+```javascript
+engine.add([{ val: 'one' }, { val: 'two' }]);
+```
+
+#### Bloodhound#clear()
+
+Removes all suggestions from the search index.
+
+```javascript
+engine.clear();
+```
+
+#### Bloodhound#clearPrefetchCache()
+
+If you're using `prefetch`, data gets cached in local storage in an effort to
+cut down on unnecessary network requests. `clearPrefetchCache` offers a way to
+programmatically clear said cache.
+
+```javascript
+engine.clearPrefetchCache();
+```
+
+#### Bloodhound#clearRemoteCache()
+
+If you're using `remote`, Bloodhound will cache the 10 most recent responses
+in an effort to provide a better user experience. `clearRemoteCache` offers a 
+way to programmatically clear said cache.
+
+```javascript
+engine.clearRemoteCache();
+```
+
+#### Bloodhound.noConflict()
+
+Returns a reference to the Bloodhound constructor and reverts 
+`window.Bloodhound` to its previous value. Can be used to avoid naming 
+collisions. 
+
+```javascript
+var Dachshund = Bloodhound.noConflict();
+```
+
 
 <!-- section links -->
 
@@ -95,7 +159,7 @@ options you can configure.
 
 * `limit` – The max number of suggestions to return from `Bloodhound#get`. If 
   not reached, the data source will attempt to backfill the suggestions from 
-  `remote`.
+  `remote`. Defaults to `5`.
 
 * `dupDetector` – If set, this is expected to be a function with the signature 
   `(remoteMatch, localMatch)` that returns `true` if the datums are duplicates or 
@@ -103,7 +167,7 @@ options you can configure.
 
 * `sorter` – A [compare function] used to sort matched datums for a given query.
 
-* `local` – An array of [datums](#datum) or a function that returns an array of
+* `local` – An array of [datums](#datums) or a function that returns an array of
   datums.
 
 * `prefetch` – Can be a URL to a JSON file containing an array of datums or, if 
@@ -122,6 +186,11 @@ options you can configure.
 Prefetched data is fetched and processed on initialization. If the browser 
 supports local storage, the processed data will be cached there to 
 prevent additional network requests on subsequent page loads.
+
+**WARNING:** While it's possible to get away with it for smaller data sets, 
+prefetched data isn't meant to contain entire data sets. Rather, it should act 
+as a first-level cache for suggestions. If don't keep this warning in mind, 
+you run the risk of hitting [local storage limits].
 
 When configuring `prefetch`, the following options are available.
 
@@ -144,6 +213,7 @@ When configuring `prefetch`, the following options are available.
 
 <!-- section links -->
 
+[local storage limits]: http://stackoverflow.com/a/2989317
 [ajax settings object]:http://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings
 
 ### Remote
@@ -182,7 +252,7 @@ When configuring `remote`, the following options are available.
 
 ### Datums
 
-Datums are JavaScript objects the hydrate the pool of possible suggestions.
+Datums are JavaScript objects that hydrate the pool of possible suggestions.
 Bloodhound doesn't expect datums to contain any specific properties as any
 operations performed on datums are done using functions defined by the user i.e.
 `datumTokenizer`, `dupDetector`, and `sorter`.

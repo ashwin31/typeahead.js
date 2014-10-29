@@ -1,12 +1,14 @@
 /*
  * typeahead.js
  * https://github.com/twitter/typeahead.js
- * Copyright 2013 Twitter, Inc. and other contributors; Licensed MIT
+ * Copyright 2013-2014 Twitter, Inc. and other contributors; Licensed MIT
  */
 
 // inspired by https://github.com/jharding/boomerang
 
 var EventEmitter = (function() {
+  'use strict';
+
   var splitter = /\s+/, nextTick = getNextTick();
 
   return {
@@ -57,7 +59,7 @@ var EventEmitter = (function() {
   }
 
   function trigger(types) {
-    var that = this, type, callbacks, args, syncFlush, asyncFlush;
+    var type, callbacks, args, syncFlush, asyncFlush;
 
     if (!this._callbacks) { return this; }
 
@@ -80,7 +82,7 @@ var EventEmitter = (function() {
     function flush() {
       var cancelled;
 
-      for (var i = 0; !cancelled && i < callbacks.length; i += 1) {
+      for (var i = 0, len = callbacks.length; !cancelled && i < len; i += 1) {
         // only cancel if the callback explicitly returns false
         cancelled = callbacks[i].apply(context, args) === false;
       }
@@ -90,7 +92,7 @@ var EventEmitter = (function() {
   }
 
   function getNextTick() {
-    var nextTickFn, messageChannel;
+    var nextTickFn;
 
     // IE10+
     if (window.setImmediate) {

@@ -1,10 +1,12 @@
 /*
  * typeahead.js
  * https://github.com/twitter/typeahead.js
- * Copyright 2013 Twitter, Inc. and other contributors; Licensed MIT
+ * Copyright 2013-2014 Twitter, Inc. and other contributors; Licensed MIT
  */
 
 (function() {
+  'use strict';
+
   var old, typeaheadKey, methods;
 
   old = $.fn.typeahead;
@@ -70,21 +72,21 @@
     val: function val(newVal) {
       // mirror jQuery#val functionality: reads opearte on first match,
       // write operates on all matches
-      return !arguments.length ? getQuery(this.first()) : this.each(setQuery);
+      return !arguments.length ? getVal(this.first()) : this.each(setVal);
 
-      function setQuery() {
+      function setVal() {
         var $input = $(this), typeahead;
 
         if (typeahead = $input.data(typeaheadKey)) {
-          typeahead.setQuery(newVal);
+          typeahead.setVal(newVal);
         }
       }
 
-      function getQuery($input) {
+      function getVal($input) {
         var typeahead, query;
 
         if (typeahead = $input.data(typeaheadKey)) {
-          query = typeahead.getQuery();
+          query = typeahead.getVal();
         }
 
         return query;
@@ -106,8 +108,13 @@
   };
 
   $.fn.typeahead = function(method) {
-    if (methods[method]) {
-      return methods[method].apply(this, [].slice.call(arguments, 1));
+    var tts;
+
+    // methods that should only act on intialized typeaheads
+    if (methods[method] && method !== 'initialize') {
+      // filter out non-typeahead inputs
+      tts = this.filter(function() { return !!$(this).data(typeaheadKey); });
+      return methods[method].apply(tts, [].slice.call(arguments, 1));
     }
 
     else {

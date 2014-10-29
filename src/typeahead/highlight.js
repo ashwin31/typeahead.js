@@ -1,12 +1,13 @@
 /*
  * typeahead.js
  * https://github.com/twitter/typeahead.js
- * Copyright 2013 Twitter, Inc. and other contributors; Licensed MIT
+ * Copyright 2013-2014 Twitter, Inc. and other contributors; Licensed MIT
  */
 
 // inspired by https://github.com/jharding/bearhug
 
 var highlight = (function(doc) {
+  'use strict';
 
   var defaults = {
         node: null,
@@ -34,7 +35,7 @@ var highlight = (function(doc) {
     traverse(o.node, hightlightTextNode);
 
     function hightlightTextNode(textNode) {
-      var match, patternNode;
+      var match, patternNode, wrapperNode;
 
       if (match = regex.exec(textNode.data)) {
         wrapperNode = doc.createElement(o.tagName);
@@ -70,7 +71,7 @@ var highlight = (function(doc) {
   function getRegex(patterns, caseSensitive, wordsOnly) {
     var escapedPatterns = [], regexStr;
 
-    for (var i = 0; i < patterns.length; i++) {
+    for (var i = 0, len = patterns.length; i < len; i++) {
       escapedPatterns.push(_.escapeRegExChars(patterns[i]));
     }
 

@@ -14,7 +14,7 @@ The typeahead.js library consists of 2 components: the suggestion engine,
 The suggestion engine is responsible for computing suggestions for a given 
 query. The UI view is responsible for rendering suggestions and handling DOM 
 interactions. Both components can be used separately, but when used together, 
-they can provided a rich typeahead experience.
+they can provide a rich typeahead experience.
 
 <!-- section links -->
 
@@ -156,6 +156,15 @@ Grunt tasks that'll be useful in development.
 [entry-level]: https://github.com/twitter/typeahead.js/issues?&labels=entry-level&state=open
 [grunt-cli]: https://github.com/gruntjs/grunt-cli
 
+Maintainers
+-----------
+
+* **Jake Harding** 
+  * [@JakeHarding](https://twitter.com/JakeHarding) 
+  * [GitHub](https://github.com/jharding)
+
+* **You?**
+
 Authors
 -------
 
@@ -165,7 +174,7 @@ Authors
 
 * **Veljko Skarich**
   * [@vskarich](https://twitter.com/vskarich) 
-  * [GitHub](https://github.com/velsgithub)
+  * [GitHub](https://github.com/vskarich)
 
 * **Tim Trueman**
   * [@timtrueman](https://twitter.com/timtrueman) 
